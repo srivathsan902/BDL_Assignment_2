@@ -40,7 +40,7 @@ def select_urls(**context):
     return True
 
 def download_urls(**context):
-    destination_dir = "/opt/airflow/logs/dataset_downloads/"
+    destination_dir = "/opt/airflow/logs/archive/"
     
     if os.path.exists(destination_dir):
         shutil.rmtree(destination_dir)
@@ -53,7 +53,7 @@ def download_urls(**context):
         os.system(f"wget -P {destination_dir} {link}")
 
 def zip_files(**context):
-    download_dir = "/opt/airflow/logs/dataset_downloads"
+    download_dir = "/opt/airflow/logs/archive"
     destination_dir = "/opt/airflow/logs/archive.zip"
     zip_file_path = "/opt/airflow/logs/"
     
@@ -67,7 +67,7 @@ def zip_files(**context):
 
 # Define DAG
 with DAG(
-    dag_id = "Fetch_Data_DAG",
+    dag_id = "DataFetchPipeline",
     schedule_interval = '@daily',
     start_date = datetime(2024, 3, 1),
     catchup = False

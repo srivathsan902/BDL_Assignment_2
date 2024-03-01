@@ -74,6 +74,7 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
+    
   user: "${AIRFLOW_UID:-50000}:0"
   depends_on:
     &airflow-common-depends-on
@@ -154,8 +155,7 @@ services:
       timeout: 10s
       retries: 5
       start_period: 30s
-    # volumes:
-    #   - "/home/srivathsan/Semester 8/Big Data Laboratory/Assignment 2/docker_implementation/"
+
     environment:
       <<: *airflow-common-env
       # Required to handle warm shutdown of the celery workers properly
