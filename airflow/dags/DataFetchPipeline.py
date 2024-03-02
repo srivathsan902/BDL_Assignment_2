@@ -10,10 +10,10 @@ from airflow.operators.bash_operator import BashOperator
 
 # Define variables
 BASE_URL = "https://www.ncei.noaa.gov/data/local-climatological-data/access/"
-YEAR = 1973
+YEAR = 2002
 BASE_URL = BASE_URL + str(YEAR) +'/'
 DESTINATION_FILE_PATH = '/opt/airflow/logs/links.txt'
-SAMPLES_TO_CHOOSE = 2
+SAMPLES_TO_CHOOSE = 100
 
 
 bash_command = f"""
@@ -46,11 +46,18 @@ def download_urls(**context):
         shutil.rmtree(destination_dir)
     os.makedirs(destination_dir)
 
+    filename = destination_dir + str(YEAR) + ".txt"
+    content = str(YEAR)
+    with open(filename, "w") as file:
+        file.write(content)
+
+
     links = context['ti'].xcom_pull(key='download_links')
 
     for link in links:
         print(link)
         os.system(f"wget -P {destination_dir} {link}")
+    
 
 def zip_files(**context):
     download_dir = "/opt/airflow/logs/archive"
