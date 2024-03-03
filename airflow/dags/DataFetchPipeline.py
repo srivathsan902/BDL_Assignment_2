@@ -11,11 +11,15 @@ from airflow.operators.bash_operator import BashOperator
 # Define variables
 BASE_URL = "https://www.ncei.noaa.gov/data/local-climatological-data/access/"
 YEAR = 2002
+if YEAR < 1901 or YEAR > 2024:      # Boundary Check
+    YEAR = 2024
+
 BASE_URL = BASE_URL + str(YEAR) +'/'
 DESTINATION_FILE_PATH = '/opt/airflow/logs/links.txt'
 SAMPLES_TO_CHOOSE = 100
 
 
+# Command to extract links from the website into a text file
 bash_command = f"""
 wget -q -O - {BASE_URL} |
 grep -oP 'href="([^"]*\\.csv)"' |
@@ -23,7 +27,8 @@ sed -e 's/^href="//' -e 's/"$//' -e "s|^|{BASE_URL}|" > {DESTINATION_FILE_PATH}
 """
 
 # Import custom modules:
-def select_urls(**context):
+
+def select_urls(**context): 
     path = '/opt/airflow/logs/links.txt'
     all_links = None
     try:
@@ -33,7 +38,7 @@ def select_urls(**context):
         print("Could not open/read file:")
 
     all_links = all_links.split('\n')
-    required_links = random.sample(all_links, min(SAMPLES_TO_CHOOSE, len(all_links)))
+    required_links = random.sample(all_links, min(SAMPLES_TO_CHOOSE, len(all_links)))    # min is used as a Boundary Check
 
     context['ti'].xcom_push(key = 'download_links', value = required_links)
 
@@ -41,7 +46,7 @@ def select_urls(**context):
 
 def download_urls(**context):
     destination_dir = "/opt/airflow/logs/archive/"
-    
+    # Create directory if it doesn't exist
     if os.path.exists(destination_dir):
         shutil.rmtree(destination_dir)
     os.makedirs(destination_dir)
@@ -53,7 +58,7 @@ def download_urls(**context):
 
 
     links = context['ti'].xcom_pull(key='download_links')
-
+    # Download links using wget
     for link in links:
         print(link)
         os.system(f"wget -P {destination_dir} {link}")
@@ -71,6 +76,10 @@ def zip_files(**context):
     shutil.make_archive(archive_name, 'zip', download_dir)
     shutil.move(f"{archive_name}.zip", os.path.join(zip_file_path, f"{archive_name}.zip"))
     shutil.rmtree(download_dir)
+
+# ********************************************************************************************************************************
+# ********************************************************************************************************************************
+# ********************************************************************************************************************************
 
 # Define DAG
 with DAG(

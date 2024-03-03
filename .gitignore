@@ -1,6 +1,7 @@
 # Custom gitignore files:
 /airflow/logs
 temp.py
+git_log_output.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
