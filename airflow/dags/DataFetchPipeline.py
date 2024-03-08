@@ -5,7 +5,7 @@ import zipfile
 from airflow.models import DAG
 from datetime import datetime, timedelta
 from airflow.operators.python import PythonOperator
-from airflow.operators.bash_operator import BashOperator
+from airflow.operators.bash import BashOperator
 
 
 # Define variables
@@ -82,8 +82,15 @@ def zip_files(**context):
 # ********************************************************************************************************************************
 
 # Define DAG
+
+args={
+    'owner' : 'Srivathsan',
+    'retries': 0,
+}
+
 with DAG(
     dag_id = "DataFetchPipeline",
+    default_args = args,
     schedule_interval = '@daily',
     start_date = datetime(2024, 3, 1),
     catchup = False

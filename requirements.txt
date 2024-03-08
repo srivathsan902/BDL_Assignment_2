@@ -1,0 +1,7 @@
+pandas
+numpy
+apache_beam
+matplotlib
+geopandas
+imageio
+apache_airflow

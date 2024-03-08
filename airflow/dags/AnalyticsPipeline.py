@@ -14,10 +14,8 @@ import apache_beam as beam
 from airflow.models import DAG
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-from airflow.operators.bash_operator import BashOperator
-from airflow.contrib.sensors.file_sensor import FileSensor
-from airflow.operators.dummy_operator import DummyOperator
-from airflow.operators.python import PythonOperator, BranchPythonOperator
+from airflow.sensors.filesystem import FileSensor
+from airflow.operators.python import PythonOperator
 
 # Define variables:
 # Add columns here to analyze
@@ -57,7 +55,10 @@ def extract_required_fields(file_path):
 
 def compute_monthly_averages(df):
     df.set_index('DATE', inplace=True)
-    start_year = df.index.min().year    
+    # start_year = df.index.max().year    
+    input_folder = "/opt/airflow/logs/archive" 
+    start_year = [os.path.splitext(file)[0] for file in os.listdir(input_folder) if file.endswith(".txt")][0]
+
     full_date_range = pd.date_range(start=f'{start_year}-01-01', end=f'{start_year}-12-31', freq='M')
 
     # Put average of 0 for the month, if the month is not encountered at all in the file
@@ -134,11 +135,18 @@ def generate_plot(DATA, FIELD_NAME, month, year):
     )
     
     # Customize for getting the colorbar of the heat map
-    cax = fig.add_axes([0.92, 0.1, 0.02, 0.8])  # [x, y, width, height]
+    cax = fig.add_axes([0.92, 0.3, 0.02, 0.4])  # [x, y, width, height]
     sm = plt.cm.ScalarMappable(cmap=cm.coolwarm, norm=norm)
     sm.set_array([])  # You need to set a dummy array for the colorbar to work
-    fig.colorbar(sm, cax=cax, label=FIELD_NAME)
-    ax.set_title('Average '+FIELD_NAME + "  " + inverse_month[month] + " :" + year)
+
+    words = re.findall(r'[A-Z][a-z]*', FIELD_NAME)
+    FIELD_NAME_SPACE_SEPERATED = ' '.join(words)
+    fig.colorbar(sm, cax=cax, label=FIELD_NAME_SPACE_SEPERATED)
+    ax.set_title('Monthly Average of '+FIELD_NAME_SPACE_SEPERATED + " for " + inverse_month[month] + " :" + year, fontsize=16)
+    ax.set_xlabel('Longitude', fontsize=14)
+    ax.set_ylabel('Latitude', fontsize=14)
+    ax.tick_params(axis='x', labelsize=14)
+    ax.tick_params(axis='y', labelsize=14)
 
 
 def generate_png():
@@ -254,7 +262,7 @@ args={
 with DAG(
     dag_id = "AnalyticsPipeline",
     default_args = args,
-    schedule_interval = timedelta(minutes =1),
+    schedule_interval = timedelta(minutes =600),
     start_date = datetime(2024, 3, 1),
     catchup = False,
 ) as dag:
